@@ -213,11 +213,13 @@ def fetch_with_retry(fn: Callable, log_fn: Callable[[str, str], None], attempts:
     for i in range(attempts):
         try:
             return fn()
-        except (ccxt.NetworkError, ccxt.ExchangeError) as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, Exception) as e:
             last_err = e
-            log_fn("WARN", f"Retry {i+1}/{attempts} after error: {e}")
-            time.sleep(delay_seconds * (1.5 ** i))
+            sleep_for = delay_seconds * (1.5 ** i)
+            log_fn("WARN", f"Retry {i+1}/{attempts} after error: {e} | sleep {sleep_for:.2f}s")
+            time.sleep(sleep_for)
     if last_err:
+        log_fn("ERROR", f"Max retries reached: {repr(last_err)}")
         raise last_err
 
 
